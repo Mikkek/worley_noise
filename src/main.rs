@@ -8,12 +8,15 @@ const WIDTH : usize = 512;
 
 const POINTS: usize = 64;
 
+type ValueType = Rgb< u8 >;
+
 fn main() {
     let mut prng = StdRng::seed_from_u64(SEED);
+    let mut prng2 = StdRng::seed_from_u64(SEED);
     let mut n_map = WorleyMap::new(HEIGHT, WIDTH);
     let mut rand_points = Vec::with_capacity(POINTS);
     for _ in 0..POINTS {
-        rand_points.push( Point::from_rng(HEIGHT, &mut prng) );
+        rand_points.push( (Point::from_rng(HEIGHT, &mut prng), random_colour(&mut prng2)) );
     }
 
     let mut image: ImageBuffer<Rgb<u8>, Vec<u8>>
@@ -23,41 +26,51 @@ fn main() {
                 |_, _| Rgb([0, 0, 0]),
             );
 
-    n_map.calc_noise(&rand_points, Distance::Euclidean, 0);
+    n_map.dist_noise(&rand_points, Distance::Euclidean, 0);
 
     // Fill image with Worley values
+    // for row in 0..n_map.height {
+    //     for column in 0..n_map.width {
+    //         let u8_noise = n_map.get(row, column) as u8;
+    //         image.put_pixel(
+    //             column as u32,
+    //             row as u32,
+    //             Rgb([u8_noise; 3])
+    //         );
+    //     }
+    // }
+
     for row in 0..n_map.height {
         for column in 0..n_map.width {
-            let u8_noise = n_map.get(row, column) as u8;
             image.put_pixel(
-                column as u32,
                 row as u32,
-                Rgb([u8_noise; 3])
+                column as u32,
+                n_map.get(column, row),
             );
         }
     }
 
     // Draw the random points
-    for point in rand_points {
+    for (point, _) in rand_points {
         image.put_pixel(
             point.column as u32,
             point.row as u32,
-            Rgb([255, 0, 255])
+            Rgb([0; 3])
         );
     }
 
-    save_img(image, "Distances");
+    save_img(image, "Regions");
 }
 
 struct WorleyMap {
     height: usize,
     width: usize,
-    values: Vec<f64>,
+    values: Vec< ValueType >,
 }
 
 impl WorleyMap {
     fn new(height: usize, width: usize) -> Self {
-        let values = vec![0.0; height * width];
+        let values = vec![Rgb([0; 3]); height * width];
         WorleyMap {
             height,
             width,
@@ -65,25 +78,25 @@ impl WorleyMap {
         }
     }
 
-    fn calc_noise(&mut self, points: &Vec<Point>, dist_fn: Distance, n: usize) {
+    fn dist_noise(&mut self, regions: &Vec<(Point, Rgb< u8 >)>, dist_fn: Distance, n: usize) {
         for row in 0..self.height {
             if row % 100 == 0 { println!("Row: {}", row) }
             for column in 0..self.width {
                 let mut distances = Vec::with_capacity( 512 * POINTS );
-                for &point in points.iter() {
+                for &(point, region_colour) in regions.iter() {
 
                     let dist = dist_fn.dist(
-                        Point { row, column },
+                        Point::from(column, row),
                         point
                     );
-                    distances.push(dist);
+                    distances.push((dist, region_colour));
                 }
-                distances.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                distances.sort_by(|(a, _), (b, _)| a.partial_cmp(b).unwrap());
 
                 self.set(
                     row,
                     column,
-                    distances[n],
+                    distances[n].1,
                 );
             }
         }
@@ -94,11 +107,11 @@ impl WorleyMap {
         self.height * column + row
     }
 
-    fn get(&self, column: usize, row: usize) -> f64 {
+    fn get(&self, column: usize, row: usize) -> ValueType {
         self.values[ self.index(column, row) ]
     }
 
-    fn set(&mut self, column: usize, row: usize, value: f64) {
+    fn set(&mut self, column: usize, row: usize, value: ValueType) {
         let index = self.index(column, row);
         self
             .values[ index ] = value;
@@ -117,8 +130,8 @@ fn save_img(image: ImageBuffer<Rgb<u8>, Vec<u8>>, filename: &str) {
 
 #[derive(Debug, Copy, Clone)]
 struct Point {
-    row: usize,
     column: usize,
+    row: usize,
 }
 
 impl Point {
@@ -128,8 +141,26 @@ impl Point {
         let row = (normalize(rng.next_u64()) * max) as usize;
         let column = (normalize(rng.next_u64()) * max) as usize;
 
-        Point{ row, column }
+        Point {
+            column,
+            row,
+        }
     }
+
+    fn from(column: usize, row: usize) -> Self {
+        Point {
+            column,
+            row,
+        }
+    }
+}
+
+fn random_colour(rng: &mut StdRng) -> Rgb< u8 > {
+    let r = (normalize(rng.next_u64()) * 255.0) as u8;
+    let g = (normalize(rng.next_u64()) * 255.0) as u8;
+    let b = (normalize(rng.next_u64()) * 255.0) as u8;
+    Rgb([r, g, b])
+
 }
 
 fn normalize(x: u64) -> f64 {
