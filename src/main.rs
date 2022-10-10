@@ -1,3 +1,8 @@
+/// TODO:
+///     Everything sucks, make it better.
+///     Use a permutation table.
+///     Fix all the code that is poorly written (mostly, if not, all)
+
 use image::{ImageBuffer, Rgb};
 use rand::{rngs::StdRng, SeedableRng, RngCore};
 
