@@ -6,6 +6,15 @@ use rand::{
 };
 use rand_xoshiro::SplitMix64;
 
+/// Increasing the table size would increase the quality of randomness we generate, 
+/// however, the creation of a PermutationTable is rather expensive and the size of 
+/// the table is the main contributing factor to this complexity.
+/// 
+/// We also don't want the table to be too small, as this would decrease the quality 
+/// of randomness. 256 Strikes a nice balance, giving us acceptable performance and 
+/// randomness. Also this is what i saw everyone else use so... Ken Perlin also used 
+/// a PermutationTable of this size for his perlin noise and if it's good enough for 
+/// Ken it's good enough for me :) 
 const TABLE_SIZE: usize = 256;
 
 /// A pseudo-random permutation of the numbers [0; 256[
@@ -17,6 +26,12 @@ pub struct PermutationTable {
 impl PermutationTable {
 
     /// Generates a new, random, PermutationTable from the given seed.
+    /// 
+    /// I think i will replace the use of the [`SplitMix64`] for [`Lcg64Xsh32`](https://rust-random.github.io/rand/rand_pcg/struct.Lcg64Xsh32.html), 
+    /// since the table will should only be generated once, we can sacrifice a bit of performance for the higher quality prng.
+    /// 
+    /// This change is not really necessary, but since i use [`SplitMix64`] for other rng purposes, it could 
+    /// be a significant improvement to the quality of randomness if we used another for our PermutationTable creation.
     pub fn new(seed: u64) -> Self {
         let mut prng = SplitMix64::seed_from_u64(seed);
         prng.gen()
