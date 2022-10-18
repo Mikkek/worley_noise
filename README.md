@@ -1,2 +1,3 @@
 # worley_noise
-I will propably re-write all of this code in the near future, and by that i mean delete all of it and start from scratch
+I think this will be the final version of this code. It is far from optimal, but this was really more of a test for implementing it and understanding the the algorithm.
+Also shoutout to Steven Worldwide for inventing this.
