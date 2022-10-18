@@ -120,8 +120,8 @@ fn worley(eval_point: Vec2, perm_table: &PermutationTable) -> FPoint{
     let mut dists = Vec::with_capacity(9);
 
     for i in -1..=1 {   // Repeats for all relevant unit squares
-        for j in -1..=1 {               // We repeat for the grid relative to our unit square:
-            let mut sq: [i32; 2] = unit_sq; // (-1,  1) | ( 0,  1) | ( 1,  1)
+        for j in -1..=1 {                   // We repeat for the grid relative to our unit square:
+            let mut sq = unit_sq;           // (-1,  1) | ( 0,  1) | ( 1,  1)
             sq[0] += j;                     // (-1,  0) | ( 0,  0) | ( 1,  0)
             sq[1] += i;                     // (-1, -1) | ( 0, -1) | ( 1, -1)
             
@@ -191,6 +191,8 @@ fn rand_vec2(seed: u8) -> FPoint {
 fn euclidean_dist(p: &Vec2, q: &FPoint) -> f64 {
     ((p.x - q.x).powi(2) + (p.y - q.y).powi(2)).sqrt()
 }
+
+
 
 #[derive(Debug, Copy, Clone)]
 struct FPoint {
