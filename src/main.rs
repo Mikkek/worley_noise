@@ -58,10 +58,10 @@ fn main() {
         }
     }
     // Looping like this is VERY inefficient, as we have to generate the feature points for every pixel. 
-    // This mean, that for a 512x512 image every pixel generates 9 feature points that's 512 * 512 * 9 = 2.359.296 times total.
+    // This means, that for a 512x512 image every pixel generates 9 feature points that's 512 * 512 * 9 = 2.359.296 times total.
     //
     // I would fix this, by making a seperate noise function to generate an area of noise. This way the function can use a buffer 
-    // to keep all the feature points in which would drasticly reduce the amount of calls to the feature point generator. 
+    // to keep all the feature points in; this would drasticly reduce the amount of calls to the feature point generator. 
     // For the same 512x512 image, with a scale of 64, a function like this would only have to generate ((512/64) + 2)x((512/64) + 2) = 100 total feature points.
     //
     // TL;DR: this could be improved slightly.
@@ -164,15 +164,14 @@ fn worley(eval_point: Vec2, perm_table: &PermutationTable) -> FPoint{
 /// the points from a [`PermutationTable`] it would probably be faster, but by how mutch? And 
 /// will there be enough variance(probably). This should not add too mutch to the runtime, even 
 /// though it is, without a doubt, overkill for this purpose.
+
+/// # Possible changes
+/// - At the moment, it is still possible for small "regions" to appear. This could be solved by limiting the 
+///     range at which feature points can generate, as it is right now, feature points generate with no limits.
 /// 
-/// It is not cryptographically secure, but why would we need that? We don't use the [`SmallRng`] 
-/// provided by the rand crate, as it is not reproducable across systems due to its use of [`usize`]/[`isize`].
-/// 
-/// At the moment, it is still possible for small "regions" to appear. This could be solved by limiting the 
-/// range at which feature points can generate. At the moment, feature points can be placed at any point in 
-/// the unit square.
-/// 
-/// [`SmallRng`]: rand::rngs::SmallRng
+/// - I am not sure about the use of an RNG for the purpose of getting the feature points. I would imagine simply getting 
+///     the points from hashing into the [`PermutationTable`] and doing some math magic. For now this should be fine, but 
+///     it's something to consider.
 fn rand_vec2(seed: u8) -> FPoint {
     let mut rng = SplitMix64::seed_from_u64(seed as u64);
     let x: f64 = rng.gen();
@@ -193,7 +192,7 @@ fn euclidean_dist(p: &Vec2, q: &FPoint) -> f64 {
 }
 
 
-
+/// A feature point type. The point is to make returning from a worley function easier.
 #[derive(Debug, Copy, Clone)]
 struct FPoint {
     x: f64,
